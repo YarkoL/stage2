@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>WebRTC video chat</title>
+  <link rel="stylesheet" href="css/main.css" />
+
+</head>
+
+<body>
+  <div>
+
+    <input type="text" id="nameInput" maxlength="12" placeholder="Your name" >
+    <button id="connectionButton">Connect</button>
+
+    <!--  -->
+    <div id='chat'></div>
+
+    <input type="text" id="textInput" placeholder="Write something" disabled="disabled" onkeyup="handleKey(event)"/>
+    
+    <video id="localVideo" autoplay muted></video>
+    <video id="remoteVideo" autoplay></video>
+    
+    <button id="hangupButton">Hang Up</button>
+  </div>
+  <div>
+    Users online : <br>
+    <span id="userlist"> </span>
+  </div>
+
+  <script src="js/adapter.js"></script>
+  <script src="js/main.js"></script>
+
+</body>
+
+</html>
