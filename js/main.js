@@ -1,20 +1,20 @@
 'use strict';
 
-var hostname = window.location.hostname;
+const hostname = window.location.hostname;
 trace(hostname, 'Hostname');
 
-var localVideo = document.getElementById('localVideo');
+const localVideo = document.getElementById('localVideo');
 
-var remoteVideo = document.getElementById('remoteVideo');
+const remoteVideo = document.getElementById('remoteVideo');
 
-var hangupButton = document.getElementById('hangupButton');
+const hangupButton = document.getElementById('hangupButton');
 
-var nameInput = document.getElementById('nameInput');
-var connectionButton = document.getElementById('connectionButton');
+const nameInput = document.getElementById('nameInput');
+const connectionButton = document.getElementById('connectionButton');
 
-var chat = document.getElementById('chat');
-var textInput = document.getElementById('textInput');
-var userlist = document.getElementById("userlist");
+const chat = document.getElementById('chat');
+const textInput = document.getElementById('textInput');
+const userlist = document.getElementById("userlist");
 
 var clientID = 0;
 var connection = null;
@@ -26,12 +26,14 @@ var peerConnection = null;
 
 var canAddTrack = false;
 
-var constraints = {
+var serverData = {sigserverUri:'', turnUri:'', turnUser:'', turnPwd:''};
+
+const constraints = {
   audio: false,
   video: true
 };
 
-var offerOptions = {
+const offerOptions = {
   offerToReceiveVideo: 1
 };
 
@@ -39,10 +41,25 @@ var haveInitiatedConnection = false;
 
 hangupButton.disabled = true;
 hangupButton.onclick = hangup;
-connectionButton.onclick = connect;
+connectionButton.onclick = loadServerData;
+
+function loadServerData() {
+  trace('loading server data...');
+  var request = new XMLHttpRequest();
+  request.open('GET', '../servers.json');
+  request.responseType = 'json';
+  request.send();
+  request.onload = function() {
+    var data = request.response;
+    serverData.sigserverUri = data['sigserverUri'];
+    serverData.turnUri = data['turnUri'];
+    serverData.turnUser = data['turnUser'];
+    serverData.turnPwd = data['turnPwd'];
+    connect();
+  };
+}
 
 /*connect with sigserver*/
-
 function setUsername() {
   var msg = {
     name: nameInput.value,
@@ -56,17 +73,8 @@ function setUsername() {
 
 function connect() { 
   console.log('connect ');
-  var serverUrl;
-  var scheme = 'ws';
 
-  // If this is an HTTPS connection, we have to use a secure WebSocket
-  // connection too, so add another "s" to the scheme.
-  if (document.location.protocol === 'https:') {
-    scheme += 's';
-  }
-  serverUrl = scheme + "://" + hostname + ':1984';
-  
-  connection = new WebSocket(serverUrl, 'my-protocol');
+  connection = new WebSocket(serverData.sigserverUri, 'my-protocol');
   
   connection.onopen = function(evt) {
     console.log('connection opened');
@@ -176,9 +184,9 @@ function getVideo() {
 
 function createPeerConnection(stream) {
   var servers =  {'iceServers':[{
-	'urls':'turn:',
-	'username':'',
-	'credential':''
+	'urls':'turn:' + serverData.turnUri,
+	'username': serverData.turnUser,
+	'credential': serverData.turnPwd
 	}]};
 
   peerConnection = new RTCPeerConnection(servers);
