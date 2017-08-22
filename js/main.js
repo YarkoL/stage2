@@ -28,6 +28,9 @@ var canAddTrack = false;
 
 var serverData = {sigserverUri:'', turnUri:'', turnUser:'', turnPwd:''};
 
+var sendChannel = null;       
+var receiveChannel = null;    
+
 const constraints = {
   audio: false,
   video: true
@@ -139,6 +142,16 @@ function connect() {
   };
 }
 
+function handleKey(evt) {
+  if (evt.keyCode === 13 || evt.keyCode === 14) {
+    if (!textInput.disabled) {
+      sendChannel.send(textInput.value);
+      trace('sent txt ' + textInput.value, 'handleKey');
+      textInput.value = '';
+    }   
+  }
+} 
+
 function addMessage(txt) {
   chat.innerHTML += txt + '<br>';
 }
@@ -205,6 +218,14 @@ function createPeerConnection(stream) {
   peerConnection.onnegotiationneeded = handleNegotiationNeededEvent;
 }
 
+function createSendChannel() {
+  sendChannel = peerConnection.createDataChannel('test');
+  sendChannel.onopen = function(event) {
+    trace('Opened data channel', 'createSendChannel')
+    textInput.disabled = false;
+  }
+}
+
 /*Event handlers*/
 
 function handleTrackEvent(event) {
@@ -228,6 +249,7 @@ function handleNegotiationNeededEvent() {
   if (!haveInitiatedConnection) {
      return;
   }
+  createSendChannel();
   peerConnection.createOffer(offerOptions).then(function(offer) {
     // https://tools.ietf.org/html/rfc3264
     trace('created offer, type ' + offer.type, 'handleNegotiationNeededEvent');
@@ -287,7 +309,7 @@ function handleVideoOfferMsg(msg) {
   peerUsername = msg.name;
 
   createPeerConnection();
-
+  
   var desc = new RTCSessionDescription(msg.sdp);
 
   peerConnection.setRemoteDescription(desc).then(function() {
@@ -310,7 +332,7 @@ function handleVideoOfferMsg(msg) {
     return peerConnection.createAnswer();
   })
   .then(function(answer) {
-    trace('created answer, type ' + answer.type, 'handleVideoOfferMsg');
+    trace('created answer, type ' + answer.type, 'handeVideoOfferMsg');
     return peerConnection.setLocalDescription(answer);
   })
   .then(function() {
@@ -321,8 +343,20 @@ function handleVideoOfferMsg(msg) {
       sdp: peerConnection.localDescription
     };
     sendToServer(msg);
+    peerConnection.ondatachannel = setupReceiveChannel;
   })
   .catch(onError);  
+}
+
+function setupReceiveChannel(event) {
+  trace(' setting up ', 'setupReceiveChannel');
+  receiveChannel = event.channel;
+  receiveChannel.onopen = function () {
+    trace(' opened channel', 'setupReceiveChannel');
+  }
+  receiveChannel.onmessage = function(event) {
+    trace(' received txt message : ' + event.data, 'setupReceiveChannel');
+  }
 }
 
 function handleVideoAnswerMsg(msg) {
@@ -343,11 +377,20 @@ function onError(err) {
 
 function hangup() {
   trace('Ending call','Hangup');
+  if (sendChannel) {
+    sendChannel.close();
+    sendChannel = null;
+  }
+  if (receiveChannel) {
+    receiveChannel.close();
+    receiveChannel = null;
+  }
   peerConnection.close();
   peerConnection = null;
   localVideo.srcObject = null;
+  remoteVideo.srcObject = null;
   hangupButton.disabled = true;
-  callButton.disabled = false;
+  textInput.disabled = true;
 }
 
 //logging 
