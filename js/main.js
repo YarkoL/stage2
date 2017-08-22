@@ -219,7 +219,8 @@ function createPeerConnection(stream) {
 }
 
 function createSendChannel() {
-  sendChannel = peerConnection.createDataChannel('test');
+
+  sendChannel = peerConnection.createDataChannel(myUsername);
   sendChannel.onopen = function(event) {
     trace('Opened data channel', 'createSendChannel')
     textInput.disabled = false;
@@ -344,6 +345,7 @@ function handleVideoOfferMsg(msg) {
     };
     sendToServer(msg);
     peerConnection.ondatachannel = setupReceiveChannel;
+    createSendChannel();
   })
   .catch(onError);  
 }
@@ -363,6 +365,7 @@ function handleVideoAnswerMsg(msg) {
   trace('Peer ' + msg.name + ' accepted our call','handleVideoAnswerMsg');
   var desc = new RTCSessionDescription(msg.sdp);
   peerConnection.setRemoteDescription(desc).catch(onError);
+  peerConnection.ondatachannel = setupReceiveChannel;
 }
 
 function sendToServer(msg) {
