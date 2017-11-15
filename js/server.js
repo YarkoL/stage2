@@ -3,25 +3,32 @@
 "use strict";
 
 var WebSocketServer = require('websocket').server;
-var http = require('http');
+//var http = require('http');
+var https = require ('https');
+var fs = require('fs');
 
-var httpServer = http.createServer(function(request, response) {
+var chatKey  = fs.readFileSync('server.key', 'utf8');
+var chatCrt = fs.readFileSync('server.crt', 'utf8');
+
+var creds = {key: chatKey, cert: chatCrt};
+
+var httpsServer = https.createServer(creds, function(request, response) {
     console.log((new Date()) + ' Received request for ' + request.url);
     response.writeHead(404);
-    response.end();  
+    response.end();
 });
 
-var port = 1984;
+var port = 19884;
 var connections = [];
 var nextID = Date.now();
 
-httpServer.listen(port, function() {
-  console.log((new Date()) + ' HTTP server is listening on port ' + port);
+httpsServer.listen(port, function() {
+  console.log((new Date()) + ' videochat server is listening on port ' + port);
 })
 
 // create the server
-var wsServer = new WebSocketServer({
-  httpServer: httpServer
+var wssServer = new WebSocketServer({
+  httpServer: httpsServer
 });
 
 function originIsAllowed(origin) {
@@ -103,7 +110,7 @@ function sendToOneUser(target, msgString) {
 
 
 // WebSocket server
-wsServer.on('request', function(request) {
+wssServer.on('request', function(request) {
   var connection = request.accept('my-protocol', request.origin);
   console.log((new Date()) + ' Connection accepted, from ' + request.host );
   connections.push(connection);
