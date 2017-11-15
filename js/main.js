@@ -146,7 +146,8 @@ function handleKey(evt) {
   if (evt.keyCode === 13 || evt.keyCode === 14) {
     if (!textInput.disabled) {
       sendChannel.send(textInput.value);
-      trace('sent txt ' + textInput.value, 'handleKey');
+      //trace('sent txt ' + textInput.value, 'handleKey');
+      addMessage("Me: " + txt);
       textInput.value = '';
     }   
   }
@@ -357,7 +358,8 @@ function setupReceiveChannel(event) {
     trace(' opened channel', 'setupReceiveChannel');
   }
   receiveChannel.onmessage = function(event) {
-    trace(' received txt message : ' + event.data, 'setupReceiveChannel');
+    //trace(' received txt message : ' + event.data, 'setupReceiveChannel');
+    addMessage("Peer: " + event.data);
   }
 }
 
