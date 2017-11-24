@@ -145,7 +145,8 @@ function connect() {
 function handleKey(evt) {
   if (evt.keyCode === 13 || evt.keyCode === 14) {
     if (!textInput.disabled) {
-      sendChannel.send(textInput.value);
+      var txt = textInput.value
+      sendChannel.send(txt);
       //trace('sent txt ' + textInput.value, 'handleKey');
       addMessage("Me: " + txt);
       textInput.value = '';
